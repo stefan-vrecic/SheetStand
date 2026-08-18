@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/stefanvrecic/Library/Android/sdk/platform-tools/**)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb devices *)",
+      "Bash(~/Library/Android/sdk/emulator/emulator -list-avds)",
+      "Bash(./gradlew installDebug --console=plain)",
+      "Bash(osascript -e 'tell application \"System Events\" to set frontmost of process \"studio\" to true' -e 'delay 0.5' -e 'tell application \"System Events\" to keystroke \"r\" using control down')",
+      "Bash(./gradlew compileDebugKotlin --console=plain)",
+      "Read(//Users/stefanvrecic/AndroidStudioProjects/TipCalculator/**)",
+      "Read(//Users/stefanvrecic/AndroidStudioProjects/TippingCalculator/app/src/main/java/**)",
+      "Bash(find ~/.gradle -iname \"material-icons-core*.jar\" 2>/dev/null | head -5)",
+      "Bash(unzip -l /Users/stefanvrecic/.gradle/caches/9.5.0/transforms/33404938c20fcbf73012e819aebd3ef0/transformed/material-icons-core-release-api.jar)"
+    ]
+  }
+}
