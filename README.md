@@ -46,17 +46,17 @@ reading.
 
 ## Screenshots
 
-*(placeholders — to be added)*
-
-| | |
+| Home screen | 3-page practice view |
 |---|---|
-| **Home screen** | Favourites grid with thumbnails + "open a PDF" entry point |
-| **3-page practice view** | Three pages side by side with the metronome beat-lights and top bar controls visible |
-| **Auto-scroll + timer overlay** | The auto-scroll speed control and page-timer countdown mid-session |
+| ![Home screen with mode picker and favourites grid](docs/screenshots/home-screen.png) | ![Three pages side by side with top bar controls](docs/screenshots/three-page-mode.png) |
+
+| Auto-scroll mode |
+|---|
+| ![Auto-scroll speed control, metronome, and page timer in the top bar](docs/screenshots/auto-scroll-mode.png) |
 
 A short screen recording (10–15s) showing auto-scroll running with the
-metronome ticking would also go here — it's the feature combination that's
-hardest to convey in a still image.
+metronome ticking would also be worth adding here — it's the feature
+combination that's hardest to convey in a still image.
 
 ## Getting started
 
