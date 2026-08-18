@@ -128,7 +128,10 @@ fun AutoScrollTopBar(
         if (metronome.isOn) {
             Spacer(modifier = Modifier.width(7.dp))
             CompactButton(onClick = { metronome.isPaused = !metronome.isPaused }) {
-                Text(if (metronome.isPaused) "Start" else "Pause")
+                // Unicode glyphs rather than "Start"/"Pause" text: at this
+                // button's compact width the words wrapped one letter per
+                // line, so a single symbol replaces them.
+                Text(if (metronome.isPaused) "▶" else "⏸")
             }
         }
     }
