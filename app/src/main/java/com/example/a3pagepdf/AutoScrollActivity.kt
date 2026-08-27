@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -20,12 +21,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.example.a3pagepdf.viewer.AutoScrollEffect
 import com.example.a3pagepdf.viewer.AutoScrollTopBar
+import com.example.a3pagepdf.viewer.FavoritesStore
 import com.example.a3pagepdf.viewer.MetronomeEffect
+import com.example.a3pagepdf.viewer.MetronomeRadiantOverlay
 import com.example.a3pagepdf.viewer.PageNote
 import com.example.a3pagepdf.viewer.PageNoteStore
 import com.example.a3pagepdf.viewer.PageTimerEffect
+import com.example.a3pagepdf.viewer.PdfDisplayNames
 import com.example.a3pagepdf.viewer.PdfPageList
 import com.example.a3pagepdf.viewer.PdfPageSource
+import com.example.a3pagepdf.viewer.RenamePdfDialog
 import com.example.a3pagepdf.viewer.SpeedControlRow
 import com.example.a3pagepdf.viewer.pdfUriExtra
 import com.example.a3pagepdf.viewer.rememberAutoScrollState
@@ -79,6 +84,8 @@ class AutoScrollActivity : ComponentActivity() {
                         // reload and reflect the deletion.
                         var notesRefreshToken by remember { mutableStateOf(0) }
 
+                        var showRenameDialog by remember { mutableStateOf(false) }
+
                         // Shared by the confirm-dialog preview and the actual delete, so
                         // they always agree on which note is in play.
                         fun resolveDeleteCandidate(): PageNote? {
@@ -115,14 +122,42 @@ class AutoScrollActivity : ComponentActivity() {
                         PageTimerEffect(timer, listState, currentVisiblePage, pageSource.pageCount)
                         MetronomeEffect(metronome)
 
-                        PdfPageList(
-                            pageSource = pageSource,
-                            listState = listState,
-                            armedPage = armedPage,
-                            onArmedPageChange = { armedPage = it },
-                            notesRefreshToken = notesRefreshToken,
-                            onNoteTapped = { lastTappedNoteId = it }
-                        )
+                        // Box, not a bare PdfPageList call, so the radiant pulse can be
+                        // layered centered over the page content itself — it's a plain
+                        // Canvas with no gesture handlers, so it doesn't block scrolling,
+                        // tapping, or note placement underneath it.
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            PdfPageList(
+                                pageSource = pageSource,
+                                listState = listState,
+                                armedPage = armedPage,
+                                onArmedPageChange = { armedPage = it },
+                                notesRefreshToken = notesRefreshToken,
+                                onNoteTapped = { lastTappedNoteId = it },
+                                onRenameRequested = {
+                                    if (pageSource.currentUri != null) showRenameDialog = true
+                                }
+                            )
+                            if (metronome.isOn && metronome.bigPulseEnabled) {
+                                MetronomeRadiantOverlay(
+                                    state = metronome,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+
+                        val renameUri = pageSource.currentUri
+                        if (showRenameDialog && renameUri != null) {
+                            RenamePdfDialog(
+                                currentName = PdfDisplayNames.get(context, renameUri)
+                                    ?: FavoritesStore.queryDisplayName(context, renameUri),
+                                onDismiss = { showRenameDialog = false },
+                                onConfirm = { newName ->
+                                    PdfDisplayNames.set(context, renameUri, newName)
+                                    showRenameDialog = false
+                                }
+                            )
+                        }
                     }
                 }
             }

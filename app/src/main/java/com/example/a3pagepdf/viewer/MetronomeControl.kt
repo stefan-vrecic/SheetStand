@@ -1,5 +1,6 @@
 package com.example.a3pagepdf.viewer
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
@@ -77,6 +79,20 @@ fun MetronomeControl(state: MetronomeState) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(state.tapFeedback)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { state.bigPulseEnabled = !state.bigPulseEnabled }
+                ) {
+                    Checkbox(
+                        checked = state.bigPulseEnabled,
+                        onCheckedChange = { state.bigPulseEnabled = it }
+                    )
+                    Text("Big Pulse Overlay", fontSize = 14.sp)
                 }
             }
         }

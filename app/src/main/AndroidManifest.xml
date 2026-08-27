@@ -21,6 +21,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Makes "PDF Studio" show up in the system's "Open with" chooser
+                 (alongside Acrobat, Samsung Notes, etc.) for PDFs opened from
+                 a file manager, browser download, email attachment, and so on. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
         </activity>
 
         <activity

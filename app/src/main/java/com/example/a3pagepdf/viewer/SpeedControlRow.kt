@@ -73,7 +73,7 @@ fun SpeedControlRow(state: AutoScrollState) {
             },
             valueRange = 10f..300f,
             modifier = Modifier
-                .width(300.dp)
+                .width(150.dp)
                 .padding(horizontal = 8.dp)
         )
         Checkbox(

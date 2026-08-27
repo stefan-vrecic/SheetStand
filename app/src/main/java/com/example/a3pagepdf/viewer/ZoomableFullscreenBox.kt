@@ -15,14 +15,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 
 /**
- * Wraps [content] with pinch-to-zoom, pan, and single-tap-to-toggle-fullscreen
- * gestures — this was identical code duplicated across TwoPageActivity,
+ * Wraps [content] with pinch-to-zoom, pan, single-tap-to-toggle-fullscreen,
+ * and long-press ([onLongPress] — e.g. to open a rename dialog) gestures —
+ * this was identical code duplicated across TwoPageActivity,
  * ThreePageActivity, and FourPageActivity.
  */
 @Composable
 fun ZoomableFullscreenBox(
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongPress: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
@@ -38,7 +40,9 @@ fun ZoomableFullscreenBox(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(Unit) { detectTapGestures(onTap = { onTap() }) }
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { onTap() }, onLongPress = { onLongPress() })
+            }
             .transformable(state = transformState)
             .graphicsLayer(
                 scaleX = scale,

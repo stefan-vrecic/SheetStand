@@ -32,11 +32,15 @@ import com.example.a3pagepdf.viewer.MetronomeEffect
 import com.example.a3pagepdf.viewer.MetronomeOverlay
 import com.example.a3pagepdf.viewer.MultiPagePdfController
 import com.example.a3pagepdf.viewer.PdfViewerMode
+import com.example.a3pagepdf.viewer.FavoritesStore
+import com.example.a3pagepdf.viewer.PdfDisplayNames
 import com.example.a3pagepdf.viewer.PdfViewerTopBar
+import com.example.a3pagepdf.viewer.RenamePdfDialog
 import com.example.a3pagepdf.viewer.ZoomableFullscreenBox
 import com.example.a3pagepdf.viewer.pdfUriExtra
 import com.example.a3pagepdf.viewer.rememberMetronomeState
 import com.example.a3pagepdf.viewer.setSystemBarsHidden
+import androidx.compose.ui.platform.LocalContext
 
 class TwoPageActivity : ComponentActivity() {
 
@@ -61,6 +65,9 @@ class TwoPageActivity : ComponentActivity() {
                         val metronome = rememberMetronomeState()
                         MetronomeEffect(metronome)
 
+                        val context = LocalContext.current
+                        var showRenameDialog by remember { mutableStateOf(false) }
+
                         Column(modifier = Modifier.fillMaxSize()) {
 
                             if (!isFullScreen) {
@@ -83,10 +90,13 @@ class TwoPageActivity : ComponentActivity() {
                                 }
                             }
 
-                            ZoomableFullscreenBox(onTap = {
-                                isFullScreen = !isFullScreen
-                                setSystemBarsHidden(isFullScreen)
-                            }) {
+                            ZoomableFullscreenBox(
+                                onTap = {
+                                    isFullScreen = !isFullScreen
+                                    setSystemBarsHidden(isFullScreen)
+                                },
+                                onLongPress = { if (controller.currentUri != null) showRenameDialog = true }
+                            ) {
                                 Row(modifier = Modifier.fillMaxSize()) {
                                     for (i in 0..1) {
                                         Box(
@@ -113,6 +123,19 @@ class TwoPageActivity : ComponentActivity() {
                             MetronomeOverlay(
                                 state = metronome,
                                 modifier = Modifier.align(Alignment.TopEnd)
+                            )
+                        }
+
+                        val renameUri = controller.currentUri
+                        if (showRenameDialog && renameUri != null) {
+                            RenamePdfDialog(
+                                currentName = PdfDisplayNames.get(context, renameUri)
+                                    ?: FavoritesStore.queryDisplayName(context, renameUri),
+                                onDismiss = { showRenameDialog = false },
+                                onConfirm = { newName ->
+                                    PdfDisplayNames.set(context, renameUri, newName)
+                                    showRenameDialog = false
+                                }
                             )
                         }
                     }

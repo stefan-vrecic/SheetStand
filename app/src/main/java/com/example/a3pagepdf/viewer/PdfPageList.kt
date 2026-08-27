@@ -34,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -76,7 +78,8 @@ fun PdfPageList(
     armedPage: Int?,
     onArmedPageChange: (Int?) -> Unit,
     notesRefreshToken: Int,
-    onNoteTapped: (String) -> Unit
+    onNoteTapped: (String) -> Unit,
+    onRenameRequested: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val uri = pageSource.currentUri
@@ -110,8 +113,6 @@ fun PdfPageList(
 
             val bmp = pageSource.bitmapCache[pageNumber]
             var imageSizePx by remember { mutableStateOf(IntSize.Zero) }
-            val isArmed = armedPage == pageNumber
-
             Box(modifier = Modifier.fillMaxWidth()) {
                 if (bmp != null) {
                     Image(
@@ -121,24 +122,14 @@ fun PdfPageList(
                         modifier = Modifier
                             .fillMaxWidth()
                             .onSizeChanged { imageSizePx = it }
-                            .pointerInput(pageNumber, isArmed) {
-                                Log.d(TAG, "pointerInput installed: page=$pageNumber isArmed=$isArmed")
-                                if (!isArmed) return@pointerInput
-                                detectTapGestures { offset ->
-                                    Log.d(TAG, "tap on page=$pageNumber offset=$offset imageSizePx=$imageSizePx")
-                                    val size = imageSizePx
-                                    if (size.width == 0 || size.height == 0) {
-                                        Log.d(TAG, "aborting: imageSizePx not ready yet")
-                                        return@detectTapGestures
-                                    }
-                                    pendingPlacement = PendingNotePlacement(
-                                        page = pageNumber,
-                                        xFraction = (offset.x / size.width).coerceIn(0f, 1f),
-                                        yFraction = (offset.y / size.height).coerceIn(0f, 1f)
-                                    )
-                                    Log.d(TAG, "pendingPlacement set: $pendingPlacement")
-                                    onArmedPageChange(null)
-                                }
+                            // Note entry is deliberately initiated by the visible chips,
+                            // not by a second, invisible tap target over the sheet. That
+                            // made the old two-step flow feel like the chips missed taps.
+                            // Long-press is a separate gesture (renaming), so it doesn't
+                            // fight the chips for a plain tap the way a second tap target
+                            // would have.
+                            .pointerInput(pageNumber) {
+                                detectTapGestures(onLongPress = { onRenameRequested() })
                             }
                     )
 
@@ -156,12 +147,14 @@ fun PdfPageList(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
 
-                    // "Add text" toggle — plain text chip, same shape as the page-number
-                    // badge below. A small icon here was unreliable to tap; text isn't.
+                    // Both visible controls open the same real note-entry dialog directly.
+                    // The saved note starts near the matching side of the page, so the
+                    // button itself is the complete, reliable interaction — no precision
+                    // tap on the sheet is needed to get the field to appear.
                     Text(
-                        text = if (isArmed) "Note ●" else "Note",
+                        text = "Note",
                         fontSize = 12.sp,
-                        color = if (isArmed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(6.dp)
@@ -170,8 +163,11 @@ fun PdfPageList(
                                 shape = RoundedCornerShape(4.dp)
                             )
                             .clickable {
-                                Log.d(TAG, "on-page Note chip tapped: page=$pageNumber isArmed=$isArmed")
-                                onArmedPageChange(if (isArmed) null else pageNumber)
+                                pendingPlacement = PendingNotePlacement(
+                                    page = pageNumber,
+                                    xFraction = 0.10f,
+                                    yFraction = 0.10f
+                                )
                             }
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
@@ -221,32 +217,63 @@ fun PdfPageList(
 
     pendingPlacement?.let { placement ->
         Log.d(TAG, "rendering Add-text dialog for $placement")
-        var text by remember(placement) { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { pendingPlacement = null },
-            title = { Text("Add text") },
-            text = {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it }
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val trimmed = text.trim()
-                    if (trimmed.isNotEmpty() && uri != null) {
-                        notes = PageNoteStore.add(
-                            context, uri, placement.page, placement.xFraction, placement.yFraction, trimmed
-                        )
-                    }
-                    pendingPlacement = null
-                }) { Text("Add") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingPlacement = null }) { Text("Cancel") }
+        AddNoteDialog(
+            onDismiss = { pendingPlacement = null },
+            onConfirm = { trimmed ->
+                if (uri != null) {
+                    notes = PageNoteStore.add(
+                        context, uri, placement.page, placement.xFraction, placement.yFraction, trimmed
+                    )
+                }
+                pendingPlacement = null
             }
         )
     }
+}
+
+/**
+ * Text-entry dialog for a freshly-placed note. Rewritten as its own
+ * composable (was inlined before) to fix two real gaps in the old version:
+ * the field never grabbed focus/the keyboard on open — so "tap page, dialog
+ * opens, start typing" silently did nothing until you *also* tapped the
+ * field, which read as the whole feature being broken — and "Add" stayed
+ * tappable (and silently no-op'd) with empty/whitespace-only text instead of
+ * just being disabled.
+ */
+@Composable
+private fun AddNoteDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (trimmedText: String) -> Unit
+) {
+    var text by remember { mutableStateOf("") }
+    val trimmed = text.trim()
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add text") },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Note") },
+                modifier = Modifier.focusRequester(focusRequester)
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(trimmed) },
+                enabled = trimmed.isNotEmpty()
+            ) { Text("Add") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
 
 /**

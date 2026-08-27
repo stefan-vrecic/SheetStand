@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -24,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,12 +37,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.a3pagepdf.viewer.EXTRA_PDF_URI
 import com.example.a3pagepdf.viewer.FavoriteItem
 import com.example.a3pagepdf.viewer.FavoritesGrid
 import com.example.a3pagepdf.viewer.FavoritesStore
+import com.example.a3pagepdf.viewer.MODE_OPTIONS
+import com.example.a3pagepdf.viewer.PdfDisplayNames
 import com.example.a3pagepdf.viewer.PdfViewerMode
 
 class HomeActivity : ComponentActivity() {
@@ -54,9 +59,20 @@ class HomeActivity : ComponentActivity() {
     // updates straight into the grid without recreating the whole activity.
     private val favoritesState = mutableStateOf<List<FavoriteItem>>(emptyList())
 
+    // Non-null while a PDF opened from *outside* the app (the system's "Open
+    // with" chooser — Files, Drive, an email attachment, etc.) is waiting on
+    // the user to pick which viewer mode to open it in. See the VIEW
+    // intent-filter on this activity in the manifest, which is what makes
+    // "PDF Studio" show up in that chooser alongside Acrobat/Samsung Notes/etc.
+    private val pendingExternalUriState = mutableStateOf<Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         favoritesState.value = FavoritesStore.load(this)
+
+        if (intent.action == Intent.ACTION_VIEW) {
+            pendingExternalUriState.value = intent.data
+        }
 
         val addFavoriteLauncher = registerForActivityResult(
             ActivityResultContracts.OpenDocument()
@@ -86,27 +102,21 @@ class HomeActivity : ComponentActivity() {
                                 .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Spacer(modifier = Modifier.height(56.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
 
                             Text(
-                                text = "PDF Studio",
+                                text = "SheetStand",
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "Choose how you'd like to read",
-                                fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                            )
 
-                            Spacer(modifier = Modifier.height(40.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
 
-                            // Mode-picker card stack — kept narrow and separate from the
-                            // (wider) favourites section below.
+                            // Mode-picker card stack — separate from (and doesn't need to
+                            // match the width of) the favourites section below.
                             Column(
-                                modifier = Modifier.fillMaxWidth(0.34f),
+                                modifier = Modifier.fillMaxWidth(0.55f),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 ModeCard(
@@ -140,13 +150,7 @@ class HomeActivity : ComponentActivity() {
                                     onClick = { startActivity(Intent(this@HomeActivity, AutoScrollActivity::class.java)) }
                                 )
 
-                                Spacer(modifier = Modifier.height(32.dp))
-                                Text(
-                                    text = "— or —",
-                                    fontSize = 13.sp,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                                )
-                                Spacer(modifier = Modifier.height(20.dp))
+                                Spacer(modifier = Modifier.height(28.dp))
 
                                 Button(
                                     onClick = { shareLastPdfViaGmail() },
@@ -168,7 +172,7 @@ class HomeActivity : ComponentActivity() {
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(40.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
 
                             var favorites by favoritesState
 
@@ -178,9 +182,9 @@ class HomeActivity : ComponentActivity() {
                                 shape = RoundedCornerShape(24.dp),
                                 color = MaterialTheme.colorScheme.tertiaryContainer,
                                 shadowElevation = 4.dp,
-                                modifier = Modifier.fillMaxWidth(0.52f)
+                                modifier = Modifier.fillMaxWidth(0.85f)
                             ) {
-                                Box(modifier = Modifier.padding(20.dp)) {
+                                Box(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 10.dp)) {
                                     FavoritesGrid(
                                         favorites = favorites,
                                         onOpen = { item -> openFavorite(item) },
@@ -188,6 +192,10 @@ class HomeActivity : ComponentActivity() {
                                         onAddClick = { addFavoriteLauncher.launch(arrayOf("application/pdf")) },
                                         onRemove = { item ->
                                             FavoritesStore.remove(this@HomeActivity, item.uri)
+                                            favorites = FavoritesStore.load(this@HomeActivity)
+                                        },
+                                        onRename = { item, newName ->
+                                            PdfDisplayNames.set(this@HomeActivity, item.uri, newName)
                                             favorites = FavoritesStore.load(this@HomeActivity)
                                         },
                                         onClearAll = {
@@ -198,7 +206,34 @@ class HomeActivity : ComponentActivity() {
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(40.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
+                        var pendingExternalUri by pendingExternalUriState
+                        pendingExternalUri?.let { uri ->
+                            AlertDialog(
+                                onDismissRequest = { pendingExternalUri = null },
+                                title = { Text("Open in which mode?") },
+                                text = {
+                                    Column {
+                                        MODE_OPTIONS.forEach { (label, mode) ->
+                                            TextButton(
+                                                onClick = {
+                                                    openExternalPdf(uri, mode)
+                                                    pendingExternalUri = null
+                                                },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(label, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                                            }
+                                        }
+                                    }
+                                },
+                                confirmButton = {},
+                                dismissButton = {
+                                    TextButton(onClick = { pendingExternalUri = null }) { Text("Cancel") }
+                                }
+                            )
                         }
                     }
                 }
@@ -230,6 +265,11 @@ class HomeActivity : ComponentActivity() {
         launchFavoriteActivity(item.uri, mode)
     }
 
+    /** A PDF opened via the system's "Open with" chooser, once the user's picked a mode. */
+    private fun openExternalPdf(uri: Uri, mode: String) {
+        launchFavoriteActivity(uri, mode)
+    }
+
     private fun launchFavoriteActivity(uri: Uri, mode: String) {
         try {
             contentResolver.takePersistableUriPermission(
@@ -237,7 +277,13 @@ class HomeActivity : ComponentActivity() {
                 Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
         } catch (e: Exception) {
-            // permission may already be held, or the source no longer grants it — proceed regardless
+            // Persistable grants aren't guaranteed — a plain "Open with" VIEW
+            // intent from another app often only grants a short-lived read,
+            // not a persistable one (that's an SAF/OpenDocument-specific
+            // concept). FLAG_GRANT_READ_URI_PERMISSION below on the *new*
+            // intent covers that case: it re-extends whatever read access
+            // this activity currently holds to the viewer activity being
+            // launched, which otherwise gets none of it by default.
         }
         val target = when (mode) {
             PdfViewerMode.TWO_PAGE -> TwoPageActivity::class.java
@@ -248,6 +294,7 @@ class HomeActivity : ComponentActivity() {
         }
         val intent = Intent(this, target).apply {
             putExtra(EXTRA_PDF_URI, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(intent)
     }
