@@ -2,6 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- usesCleartextTraffic: RemoteControlButton talks plain HTTP to
+         whatever local-network IP the user types in (see
+         RemoteControlPrefs) — there's no way to know that address ahead of
+         time to scope a network security config to it instead, and it's
+         never anything but a LAN address the user entered themselves. -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -10,7 +17,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme._3PagePdf">
+        android:theme="@style/Theme._3PagePdf"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".HomeActivity"

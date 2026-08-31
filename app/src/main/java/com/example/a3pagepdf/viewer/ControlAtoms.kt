@@ -39,6 +39,30 @@ fun CompactButton(
     }
 }
 
+/**
+ * A further ~33% size reduction from stock M3 Button (58.dp/40.dp min
+ * size, 24.dp/8.dp content padding) — its own tier, not built on top of
+ * [CompactButton]. Used for PdfViewerTopBar's Open PDF / Jump / Prev / Next
+ * buttons, freed up specifically to give AudioSeekerControl more breathing
+ * room in that same row.
+ */
+@Composable
+fun SmallActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.defaultMinSize(minWidth = 39.dp, minHeight = 27.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 5.dp)
+    ) {
+        ProvideTextStyle(LocalTextStyle.current.copy(fontSize = LocalTextStyle.current.fontSize * 0.8f)) {
+            content()
+        }
+    }
+}
+
 @Composable
 fun ClockIcon(modifier: Modifier = Modifier, sizeDp: Dp = 16.dp, color: Color = Color.White) {
     Canvas(modifier = modifier.size(sizeDp)) {

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +42,7 @@ import com.example.a3pagepdf.viewer.FavoritesStore
 import com.example.a3pagepdf.viewer.PdfDisplayNames
 import com.example.a3pagepdf.viewer.PdfViewerMode
 import com.example.a3pagepdf.viewer.PdfViewerTopBar
+import com.example.a3pagepdf.viewer.RemoteControlButton
 import com.example.a3pagepdf.viewer.RenamePdfDialog
 import com.example.a3pagepdf.viewer.ZoomableFullscreenBox
 import com.example.a3pagepdf.viewer.pdfUriExtra
@@ -141,6 +143,16 @@ class FourPageActivity : ComponentActivity() {
                                 modifier = Modifier.align(Alignment.TopEnd)
                             )
                         }
+
+                        // Same remote-control chips as Auto-Scroll's PdfPageList,
+                        // just once for the whole screen here rather than once
+                        // per page — this mode shows all its pages at once, so
+                        // there's no per-page corner to hang them off of.
+                        RemoteControlButton(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(12.dp)
+                        )
 
                         val renameUri = controller.currentUri
                         if (showRenameDialog && renameUri != null) {
