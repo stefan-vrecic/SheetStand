@@ -127,6 +127,7 @@ class HomeActivity : ComponentActivity() {
                                         favorites = favorites,
                                         onOpen = { item -> openFavorite(item) },
                                         onOpenWithMode = { item, mode -> openFavoriteWithMode(item, mode) },
+                                        onOpenOnceWithMode = { item, mode -> launchFavoriteActivity(item.uri, mode) },
                                         onAddClick = { addFavoriteLauncher.launch(arrayOf("application/pdf")) },
                                         onRemove = { item ->
                                             FavoritesStore.remove(this@HomeActivity, item.uri)

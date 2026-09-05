@@ -5,26 +5,31 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 
 /**
  * Renders whichever dialog [state] currently has pending — the long-press
- * action menu (Rename / Add Thumbnail / Remove) and everything each of those
- * three can lead to, plus the mode-unknown-tap chooser and "Clear all"
- * confirmation. Split out of FavoritesGrid so that file can stay focused on
- * just the grid layout; this owns the entire action-flow instead.
+ * action menu ("Open in [mode]" x4 / Rename / Add Thumbnail / Remove) and
+ * everything each of those can lead to, plus the mode-unknown-tap chooser
+ * and "Clear all" confirmation. Split out of FavoritesGrid so that file can
+ * stay focused on just the grid layout; this owns the entire action-flow
+ * instead.
  */
 @Composable
 fun FavoriteActionDialogs(
     state: FavoriteActionsState,
     favoritesCount: Int,
     onOpenWithMode: (FavoriteItem, String) -> Unit,
+    onOpenOnceWithMode: (FavoriteItem, String) -> Unit,
     onRemove: (FavoriteItem) -> Unit,
     onRename: (FavoriteItem, String) -> Unit,
     onClearAll: () -> Unit
@@ -55,6 +60,23 @@ fun FavoriteActionDialogs(
             title = { Text(item.name) },
             text = {
                 Column {
+                    // A one-off "open in X" — unlike the mode-unknown-tap
+                    // chooser below (which calls onOpenWithMode and remembers
+                    // the choice as this favourite's new default), these never
+                    // touch FavoritesStore: opening in 3-Page Mode today
+                    // doesn't change what a plain tap opens tomorrow.
+                    MODE_OPTIONS.forEach { (label, mode) ->
+                        TextButton(
+                            onClick = {
+                                onOpenOnceWithMode(item, mode)
+                                state.pendingLongPressItem = null
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Open in $label", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     TextButton(
                         onClick = {
                             state.pendingRenameItem = item

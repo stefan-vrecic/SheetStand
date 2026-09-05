@@ -14,6 +14,8 @@ import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 private const val POSITION_POLL_MILLIS = 250L
+private const val LOOP_POLL_MILLIS = 50L
+private const val MIN_LOOP_LENGTH_MILLIS = 100
 
 const val SPEED_STEP = 0.04f
 const val SPEED_MIN = 0.5f
@@ -41,6 +43,16 @@ class AudioSeekerState {
     var durationMs by mutableIntStateOf(0)
     var positionMs by mutableIntStateOf(0)
 
+    // Markers are always visible once a track is loaded, but looping does not
+    // start until the player deliberately moves either marker. That avoids
+    // making a newly loaded track unexpectedly repeat from beginning to end.
+    var loopStartMs by mutableIntStateOf(0)
+        private set
+    var loopEndMs by mutableIntStateOf(0)
+        private set
+    var isLoopEnabled by mutableStateOf(false)
+        private set
+
     // Deliberately NOT reset by release() — a practice speed picked for one
     // track is a reasonable default for the next one loaded too, rather than
     // silently snapping back to 1.00x every time you swap files.
@@ -52,6 +64,31 @@ class AudioSeekerState {
         isPlaying = false
         durationMs = 0
         positionMs = 0
+        loopStartMs = 0
+        loopEndMs = 0
+        isLoopEnabled = false
+    }
+
+    /** Initialises the visible A/B markers without automatically enabling looping. */
+    fun initialiseLoop(duration: Int) {
+        loopStartMs = 0
+        loopEndMs = duration
+        isLoopEnabled = false
+    }
+
+    /** Moves marker A while preserving a meaningful interval before marker B. */
+    fun setLoopStart(position: Int) {
+        loopStartMs = position.coerceIn(0, (loopEndMs - MIN_LOOP_LENGTH_MILLIS).coerceAtLeast(0))
+        isLoopEnabled = loopEndMs - loopStartMs >= MIN_LOOP_LENGTH_MILLIS
+    }
+
+    /** Moves marker B while preserving a meaningful interval after marker A. */
+    fun setLoopEnd(position: Int) {
+        loopEndMs = position.coerceIn(
+            (loopStartMs + MIN_LOOP_LENGTH_MILLIS).coerceAtMost(durationMs),
+            durationMs
+        )
+        isLoopEnabled = loopEndMs - loopStartMs >= MIN_LOOP_LENGTH_MILLIS
     }
 
     /**
@@ -91,8 +128,18 @@ fun rememberAudioSeekerState(): AudioSeekerState = remember { AudioSeekerState()
 fun AudioSeekerEffect(state: AudioSeekerState) {
     LaunchedEffect(state.isPlaying) {
         while (state.isPlaying) {
-            state.positionMs = state.mediaPlayer?.currentPosition ?: 0
-            delay(POSITION_POLL_MILLIS)
+            val player = state.mediaPlayer ?: break
+            val currentPosition = player.currentPosition
+            if (state.isLoopEnabled && currentPosition >= state.loopEndMs) {
+                player.seekTo(state.loopStartMs)
+                state.positionMs = state.loopStartMs
+            } else {
+                state.positionMs = currentPosition
+            }
+            // Looping needs a tighter check than ordinary progress display;
+            // otherwise a fast backing track can audibly overshoot B before
+            // the next poll sends it back to A.
+            delay(if (state.isLoopEnabled) LOOP_POLL_MILLIS else POSITION_POLL_MILLIS)
         }
     }
 

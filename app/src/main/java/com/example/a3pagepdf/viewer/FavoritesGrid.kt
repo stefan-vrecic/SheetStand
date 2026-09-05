@@ -57,9 +57,11 @@ private fun <T> toRowMajorReadingOrder(items: List<T>, rows: Int): List<T> {
  * Filled tiles ([FavoriteTile]) show a first-page thumbnail and open the PDF
  * on tap; the last tile ([AddFavoriteTile]) launches a document picker (wired
  * up by the caller via [onAddClick]). Long-press on a filled tile offers a
- * choice of Rename, Add Thumbnail, or Remove — see [FavoriteActionDialogs],
- * which owns that entire flow (this composable just forwards the triggers
- * into a [FavoriteActionsState]). "Clear all" asks to wipe every favourite.
+ * one-off "Open in [mode]" per viewer mode (via [onOpenOnceWithMode] — doesn't
+ * touch the favourite's stored default mode, just this one open), plus
+ * Rename, Add Thumbnail, or Remove — see [FavoriteActionDialogs], which owns
+ * that entire flow (this composable just forwards the triggers into a
+ * [FavoriteActionsState]). "Clear all" asks to wipe every favourite.
  * Tapping a tile whose [FavoriteItem.mode] is unknown (it was added from
  * HomeActivity directly, not starred from a viewer) asks which viewer to
  * open it in via [onOpenWithMode].
@@ -73,6 +75,7 @@ fun FavoritesGrid(
     favorites: List<FavoriteItem>,
     onOpen: (FavoriteItem) -> Unit,
     onOpenWithMode: (FavoriteItem, String) -> Unit,
+    onOpenOnceWithMode: (FavoriteItem, String) -> Unit,
     onAddClick: () -> Unit,
     onRemove: (FavoriteItem) -> Unit,
     onRename: (FavoriteItem, String) -> Unit,
@@ -143,6 +146,7 @@ fun FavoritesGrid(
         state = actionsState,
         favoritesCount = favorites.size,
         onOpenWithMode = onOpenWithMode,
+        onOpenOnceWithMode = onOpenOnceWithMode,
         onRemove = onRemove,
         onRename = onRename,
         onClearAll = onClearAll

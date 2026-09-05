@@ -29,25 +29,25 @@ fun PdfViewerTopBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SmallActionButton(onClick = onOpenPdf) {
             Text("Open PDF")
         }
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(4.dp))
         SmallActionButton(onClick = { controller.cycleJumpIncrement() }) {
             Text("Jump: ${controller.jumpIncrement}")
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         SmallActionButton(onClick = { controller.moveWindow(-controller.jumpIncrement) }) {
             Text("◀ Prev")
         }
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(4.dp))
         SmallActionButton(onClick = { controller.moveWindow(controller.jumpIncrement) }) {
             Text("Next ▶")
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         if (controller.pageCount > 0) {
             val windowSize = minOf(controller.windowSize, controller.pageCount)
             Text(
@@ -56,7 +56,7 @@ fun PdfViewerTopBar(
             )
         }
         FavoriteStarButton(uri = controller.currentUri, mode = controller.mode)
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(4.dp))
         SessionTimerButton()
 
         trailingContent()

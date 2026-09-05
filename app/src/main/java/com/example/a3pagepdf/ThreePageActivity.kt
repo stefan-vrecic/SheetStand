@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
@@ -29,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.example.a3pagepdf.viewer.AudioSeekerControl
 import com.example.a3pagepdf.viewer.AudioSeekerEffect
+import com.example.a3pagepdf.viewer.AudioSeekerExpandedRow
 import com.example.a3pagepdf.viewer.MetronomeBeatLights
 import com.example.a3pagepdf.viewer.MetronomeControl
 import com.example.a3pagepdf.viewer.MetronomeEffect
@@ -86,12 +88,8 @@ class ThreePageActivity : ComponentActivity() {
                                         Spacer(modifier = Modifier.width(16.dp))
                                         MetronomeBeatLights(metronome)
                                     }
-                                    AudioSeekerControl(
-                                        state = audioSeeker,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(horizontal = 8.dp)
-                                    )
+                                    AudioSeekerControl(state = audioSeeker)
+                                    Spacer(modifier = Modifier.weight(1f))
                                     MetronomeControl(metronome)
                                     if (metronome.isOn) {
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -99,6 +97,18 @@ class ThreePageActivity : ComponentActivity() {
                                             Text(if (metronome.isPaused) "Start" else "Pause")
                                         }
                                     }
+                                }
+                                // Own full-width line, not crammed into the top bar row above —
+                                // that row is already packed (Open/Jump/Prev/Next/star/timer/
+                                // metronome), and the full player (scrub bar, speed, reload) is
+                                // wide enough to wrap onto multiple lines if it tried to share it.
+                                if (audioSeeker.mediaPlayer != null) {
+                                    AudioSeekerExpandedRow(
+                                        state = audioSeeker,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp)
+                                    )
                                 }
                             }
 

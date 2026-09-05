@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exposes app/files/exports/ (where PdfNoteBaker writes its output) to
+     other apps via a content:// URI, so a generated PDF can be attached to
+     an email without hitting FileUriExposedException. -->
+<paths>
+    <files-path name="exports" path="exports/" />
+</paths>

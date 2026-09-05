@@ -64,6 +64,19 @@
             android:theme="@style/Theme._3PagePdf"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Lets PdfNoteBaker's output (app/files/exports/) be attached to an
+             email as a content:// URI rather than a raw file:// one, which
+             targetSdk 24+ blocks for other apps to open. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

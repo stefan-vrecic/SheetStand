@@ -33,6 +33,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.example.a3pagepdf.viewer.AudioSeekerControl
+import com.example.a3pagepdf.viewer.AudioSeekerEffect
+import com.example.a3pagepdf.viewer.AudioSeekerExpandedRow
 import com.example.a3pagepdf.viewer.MetronomeBeatLights
 import com.example.a3pagepdf.viewer.MetronomeControl
 import com.example.a3pagepdf.viewer.MetronomeEffect
@@ -46,6 +49,7 @@ import com.example.a3pagepdf.viewer.RemoteControlButton
 import com.example.a3pagepdf.viewer.RenamePdfDialog
 import com.example.a3pagepdf.viewer.ZoomableFullscreenBox
 import com.example.a3pagepdf.viewer.pdfUriExtra
+import com.example.a3pagepdf.viewer.rememberAudioSeekerState
 import com.example.a3pagepdf.viewer.rememberMetronomeState
 import com.example.a3pagepdf.viewer.setSystemBarsHidden
 import androidx.compose.ui.platform.LocalContext
@@ -72,6 +76,8 @@ class FourPageActivity : ComponentActivity() {
                         var isFullScreen by remember { mutableStateOf(false) }
                         val metronome = rememberMetronomeState()
                         MetronomeEffect(metronome)
+                        val audioSeeker = rememberAudioSeekerState()
+                        AudioSeekerEffect(audioSeeker)
 
                         val context = LocalContext.current
                         var showRenameDialog by remember { mutableStateOf(false) }
@@ -87,6 +93,7 @@ class FourPageActivity : ComponentActivity() {
                                         Spacer(modifier = Modifier.width(16.dp))
                                         MetronomeBeatLights(metronome)
                                     }
+                                    AudioSeekerControl(state = audioSeeker)
                                     Spacer(modifier = Modifier.weight(1f))
                                     MetronomeControl(metronome)
                                     if (metronome.isOn) {
@@ -95,6 +102,18 @@ class FourPageActivity : ComponentActivity() {
                                             Text(if (metronome.isPaused) "Start" else "Pause")
                                         }
                                     }
+                                }
+                                // Own full-width line, not crammed into the top bar row above —
+                                // that row is already packed (Open/Jump/Prev/Next/star/timer/
+                                // metronome), and the full player (scrub bar, speed, reload) is
+                                // wide enough to wrap onto multiple lines if it tried to share it.
+                                if (audioSeeker.mediaPlayer != null) {
+                                    AudioSeekerExpandedRow(
+                                        state = audioSeeker,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp)
+                                    )
                                 }
                             }
 
