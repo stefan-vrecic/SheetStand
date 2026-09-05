@@ -18,22 +18,49 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Standard M3 Button defaults: 24.dp/8.dp content padding, 40.dp min height, 58.dp min width.
- * This trims all of those down by roughly 15% for a more compact control bar,
- * plus another ~10% on top of that (size and text) so a full row of these —
- * Open/Play/prev/next/BPM/clock — fits without crowding.
+ * This trims them down close to [SmallActionButton]'s tier — AutoScrollTopBar
+ * in particular packs a dozen-plus of these into one row (Open/Play/prev/
+ * next/star/timer/delete/export/audio/BPM/clock/metronome), so every dp
+ * saved per button multiplies.
  */
 @Composable
 fun CompactButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.defaultMinSize(minWidth = 36.dp, minHeight = 26.dp),
+        enabled = enabled,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+    ) {
+        ProvideTextStyle(LocalTextStyle.current.copy(fontSize = LocalTextStyle.current.fontSize * 0.8f)) {
+            content()
+        }
+    }
+}
+
+/**
+ * A further ~33% size reduction from stock M3 Button (58.dp/40.dp min
+ * size, 24.dp/8.dp content padding) — its own tier, not built on top of
+ * [CompactButton]. Used for PdfViewerTopBar's Open PDF / Jump / Prev / Next
+ * buttons, freed up specifically to give AudioSeekerControl more breathing
+ * room in that same row.
+ */
+@Composable
+fun SmallActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.defaultMinSize(minWidth = 44.dp, minHeight = 31.dp),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
+        modifier = modifier.defaultMinSize(minWidth = 34.dp, minHeight = 24.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
     ) {
-        ProvideTextStyle(LocalTextStyle.current.copy(fontSize = LocalTextStyle.current.fontSize * 0.9f)) {
+        ProvideTextStyle(LocalTextStyle.current.copy(fontSize = LocalTextStyle.current.fontSize * 0.75f)) {
             content()
         }
     }

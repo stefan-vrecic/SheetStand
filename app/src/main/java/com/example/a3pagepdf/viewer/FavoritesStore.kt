@@ -23,14 +23,13 @@ data class FavoriteItem(
 )
 
 /**
- * Persists the user's favourite PDFs (used to back the 2x4 favourites grid
- * on HomeActivity) as a small JSON array in the same "pdf_prefs" prefs file
- * that PdfPersistence already uses. Capped at [MAX_FAVORITES] since the grid
- * itself is a fixed 2x4 layout, not a scrolling list.
+ * Persists the user's favourite PDFs (used to back the horizontally-scrolling
+ * favourites grid on HomeActivity) as a small JSON array in the same
+ * "pdf_prefs" prefs file that PdfPersistence already uses. Uncapped — the
+ * grid is a scrolling [androidx.compose.foundation.lazy.grid.LazyHorizontalGrid],
+ * not a fixed layout, so there's no slot count to run out of.
  */
 object FavoritesStore {
-    const val MAX_FAVORITES = 8
-
     private const val PREFS_NAME = "pdf_prefs"
     private const val KEY = "favorite_pdfs"
 
@@ -43,9 +42,14 @@ object FavoritesStore {
             (0 until arr.length()).mapNotNull { i ->
                 val obj = arr.optJSONObject(i) ?: return@mapNotNull null
                 val uriString = obj.optString("uri").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                val uri = Uri.parse(uriString)
                 FavoriteItem(
-                    uri = Uri.parse(uriString),
-                    name = obj.optString("name", "PDF"),
+                    uri = uri,
+                    // A rename (PdfDisplayNames) always wins over the name captured
+                    // at add-time — this is how renaming "propagates" to the
+                    // favourites grid without the rename flow needing to know
+                    // whether this URI is even favourited, let alone touch this file.
+                    name = PdfDisplayNames.get(context, uri) ?: obj.optString("name", "PDF"),
                     mode = obj.optString("mode").takeIf { it.isNotBlank() }
                 )
             }
@@ -54,13 +58,13 @@ object FavoritesStore {
         }
     }
 
-    /** Returns false (and does nothing) if [uri] is already favourited or the grid is full. */
+    /** Returns false (and does nothing) if [uri] is already favourited. */
     fun add(context: Context, uri: Uri, name: String, mode: String? = null): Boolean {
         val current = load(context)
-        if (current.size >= MAX_FAVORITES) return false
         if (current.any { it.uri == uri }) return false
 
-        val updated = current + FavoriteItem(uri, name, mode)
+        val effectiveName = PdfDisplayNames.get(context, uri) ?: name
+        val updated = current + FavoriteItem(uri, effectiveName, mode)
         persist(context, updated)
         return true
     }

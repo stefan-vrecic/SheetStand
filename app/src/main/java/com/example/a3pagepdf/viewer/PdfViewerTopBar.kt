@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,25 +29,25 @@ fun PdfViewerTopBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Button(onClick = onOpenPdf) {
+        SmallActionButton(onClick = onOpenPdf) {
             Text("Open PDF")
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        Button(onClick = { controller.cycleJumpIncrement() }) {
+        Spacer(modifier = Modifier.width(4.dp))
+        SmallActionButton(onClick = { controller.cycleJumpIncrement() }) {
             Text("Jump: ${controller.jumpIncrement}")
         }
-        Spacer(modifier = Modifier.width(16.dp))
-        Button(onClick = { controller.moveWindow(-controller.jumpIncrement) }) {
+        Spacer(modifier = Modifier.width(8.dp))
+        SmallActionButton(onClick = { controller.moveWindow(-controller.jumpIncrement) }) {
             Text("◀ Prev")
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        Button(onClick = { controller.moveWindow(controller.jumpIncrement) }) {
+        Spacer(modifier = Modifier.width(4.dp))
+        SmallActionButton(onClick = { controller.moveWindow(controller.jumpIncrement) }) {
             Text("Next ▶")
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         if (controller.pageCount > 0) {
             val windowSize = minOf(controller.windowSize, controller.pageCount)
             Text(
@@ -57,7 +56,7 @@ fun PdfViewerTopBar(
             )
         }
         FavoriteStarButton(uri = controller.currentUri, mode = controller.mode)
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(4.dp))
         SessionTimerButton()
 
         trailingContent()

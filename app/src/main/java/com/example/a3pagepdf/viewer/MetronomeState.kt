@@ -27,6 +27,12 @@ class MetronomeState {
     var currentBeat by mutableIntStateOf(0)
     var menuExpanded by mutableStateOf(false)
 
+    // Opt-in alternative to the small beat-light dots (MetronomeBeatLights):
+    // a big pulsing circle radiating from the centre of the page (see
+    // MetronomeRadiantOverlay) for practicing at a distance where the dots
+    // are too small to track. Off by default so existing behavior is unchanged.
+    var bigPulseEnabled by mutableStateOf(false)
+
     val tapTimestamps = mutableStateListOf<Long>()
     var tapFeedback by mutableStateOf("Tap Tempo")
 

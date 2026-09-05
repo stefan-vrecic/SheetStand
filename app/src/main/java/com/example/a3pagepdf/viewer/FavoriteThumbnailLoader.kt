@@ -20,10 +20,18 @@ object FavoriteThumbnailLoader {
 
     val cache = mutableStateMapOf<String, Bitmap>()
 
-    /** Renders (and caches) the first page of [uri] as a small bitmap. Safe to call repeatedly. */
+    /**
+     * Returns the thumbnail for [uri] — a user-picked [CustomThumbnails] override
+     * if one exists, otherwise the (cached, or freshly rendered) first page of
+     * the PDF itself. Safe to call repeatedly.
+     */
     suspend fun thumbnailFor(context: Context, uri: Uri): Bitmap? {
         val key = uri.toString()
         cache[key]?.let { return it }
+        CustomThumbnails.get(context, uri)?.let {
+            cache[key] = it
+            return it
+        }
 
         return withContext(Dispatchers.IO) {
             var fd: ParcelFileDescriptor? = null
